@@ -1,4 +1,4 @@
-Darknet CNN framework
+Darknet Neural Network Framework
  ---
  Darknet is an open source neural network framework written in C and CUDA by Joseph Redmon.
  
