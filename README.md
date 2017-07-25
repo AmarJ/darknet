@@ -2,10 +2,10 @@ Darknet CNN framework
  ---
  Darknet is an open source neural network framework written in C and CUDA by Joseph Redmon.
  
-Using Redmon's darknet framework I created my own implemenation of YOLO (You Only Look Once) for my Kaptur logo recogntion project. YOLO is a new approach to object detection that uses a single neural network to predict bounding boxes and class probabilities on full images in one evaluation (hence the name). The [paper on YOLO](https://arxiv.org/pdf/1506.02640.pdf) is pretty easy to follow and nicely breaks down some CNN concepts for none-PhDs like myself. 
+Using Redmon's darknet framework I created my own implemenation of YOLO (You Only Look Once) for my Kaptur logo recogntion project. YOLO is a new approach to object detection that uses a single neural network to predict bounding boxes and class probabilities on full images in one evaluation (hence the name). The [paper on YOLO](https://arxiv.org/pdf/1506.02640.pdf) is pretty easy to follow and nicely breaks down some machine learning concepts for none-PhDs like myself. 
 
 ### Features added to the framework
-* Watch folder: Images dropped into the watch folder are added to a queue and are run through the CNN. 
+* Watch folder: Images dropped into the watch folder are added to a queue and are run through the network. 
 
      ![alt text](https://preview.ibb.co/ciHfFQ/cmdLine.png)
 
