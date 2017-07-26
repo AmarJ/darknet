@@ -5,7 +5,7 @@ Darknet Neural Network Framework
 Using Redmon's darknet framework I created my own implemenation of YOLO (You Only Look Once) for my Kaptur logo recogntion project. YOLO is a new approach to object detection that uses a single neural network to predict bounding boxes and class probabilities on full images in one evaluation (hence the name). The [paper on YOLO](https://arxiv.org/pdf/1506.02640.pdf) is pretty easy to follow and nicely breaks down some machine learning concepts for none-PhDs like myself. 
 
 ### Custom features I added to the framework
-* **_Watch folder:_** Images dropped into the watch folder are added to a queue and are run through the network. 
+* **_Watch folder:_** Images that dropped into the watch folder are added to a queue and then run through the network for logo detection. 
 
      ![alt text](https://preview.ibb.co/ciHfFQ/cmdLine.png)
 
