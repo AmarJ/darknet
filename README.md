@@ -4,14 +4,14 @@ Darknet Neural Network Framework
  
 Using Redmon's darknet framework I created my own implemenation of YOLO (You Only Look Once) for my Kaptur logo recogntion project. YOLO is a new approach to object detection that uses a single neural network to predict bounding boxes and class probabilities on full images in one evaluation (hence the name). The [paper on YOLO](https://arxiv.org/pdf/1506.02640.pdf) is pretty easy to follow and nicely breaks down some machine learning concepts for none-PhDs like myself. 
 
-### Features added to the framework
-* Watch folder: Images dropped into the watch folder are added to a queue and are run through the network. 
+### Custom features I added to the framework
+* **_Watch folder:_** Images that dropped into the watch folder are added to a queue and then run through the network for logo detection. 
 
      ![alt text](https://preview.ibb.co/ciHfFQ/cmdLine.png)
 
-* Threading for network preditions: Once the neural network's weights are loaded, multiple threads are created to make predicitons on images simultaneously. Before this only one image was processed at a time. This doubles and sometimes triples the rate at which images are processed on less powerful machines (like an AWS micro instance or a Raspberry pi).  
+* **_Threading for network preditions:_** Once the neural network's weights are loaded, multiple threads can be created to make predicitons on images simultaneously. Before this only one image was processed at a time. On less powerful machines, like an AWS micro instance or a Raspberry pi, this doubles and sometimes triples the rate at which images are processed.  
 
-* Load balancing of the queue: Provides a pool of threads that are used to drain the queue. The number of threads created depends on the available virtual memory and stack size. Sometimes threads hang, so instead of loosing that image and the predicition, the image is added back to the queue and re-run through another thread. This avoids some OOM problems and stops the whole program from crashing.
+* **_Load balancing of the queue:_** Provides a pool of threads that are used to drain the queue. The number of threads created depends on the available virtual memory and stack size. Sometimes threads hang, so instead of loosing that image and predicition, the image is added back to the queue and re-run through another thread. This avoids some OOM problems and stops the whole program from crashing.
 
 ### Results from YOLO
 
@@ -23,4 +23,3 @@ So far I've been really happy with the results that I've gotten with the YOLO ap
    ![alt text](https://preview.ibb.co/hsgt25/20214298_1921053248159208_549290724764418048_n_prediction.png)
 
 Even I had trouble seeing the really dark Starbucks logo in picture above.
-
