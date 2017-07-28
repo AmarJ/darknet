@@ -190,9 +190,16 @@ image **load_alphabet()
     return alphabets;
 }
 
-void draw_detections(image im, int num, float thresh, box *boxes, float **probs, float **masks, char **names, image **alphabet, int classes)
+void draw_detections(image im, char *output, int num, float thresh, box *boxes, float **probs, float **masks, char **names, image **alphabet, int classes)
 {
     int i;
+
+    FILE *fp;
+    char outputPath[256] = "../output/coords/";
+    strncat(outputPath, output, 256);
+    strcat(outputPath, ".txt"); 
+    
+    fp = fopen(outputPath, "a+");
 
     for(i = 0; i < num; ++i){
         int class = max_index(probs[i], classes);
@@ -230,6 +237,14 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             if(top < 0) top = 0;
             if(bot > im.h-1) bot = im.h-1;
 
+	    printf("LEFT: %i RIGHT: %i  TOP: %i BOT: %i \n", left, right, top, bot); 
+
+	    fprintf(fp, "BOX x1:%i ", left);
+	    fprintf(fp, "BOX y1:%i ", top);
+	    fprintf(fp, "BOX x2:%i ", right);
+	    fprintf(fp, "BOX y2:%i\n ", bot);
+
+
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
             if (alphabet) {
                 image label = get_label(alphabet, names[class], (im.h*.03)/10);
@@ -247,6 +262,7 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             }
         }
     }
+    fclose(fp);
 }
 
 void transpose_image(image im)

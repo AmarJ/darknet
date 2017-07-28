@@ -709,8 +709,24 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         get_region_boxes(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
         if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         //else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-	draw_detections(im, output, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
+	draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
         
+	//FILE *fp;
+	
+	//box b - boxes[0];
+
+	//int left  = (b.x-b.w/2.)*im.w;
+	//int right = (b.x+b.w/2.)*im.w;
+	//int top   = (b.y-b.h/2.)*im.h;
+	//int bot   = (b.y+b.h/2.)*im.h;
+	
+	//fp = fopen("../output/coords/out.txt", "a+");
+	//fprintf(fp, "BOX x1:%i\n", boxes.x);
+	//fprintf(fp, "BOX y1:%i\n", boxes.y);
+	//fprintf(fp, "BOX x2:%i\n", x2);
+	//fprintf(fp, "BOX y2:%i\n", y2);
+	//fclose(fp);
+
 	if(outfile){
             save_image(im, outfile);
         }
