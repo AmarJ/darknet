@@ -657,14 +657,13 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     int j;
     float nms=.4;	
     char line[256];
-    
+
     pthread_t *tid = malloc(sizeof(pthread_t)); 
     pthread_create(&tid, NULL, check_queue, NULL); 
 
-    while (1){ //Keeps checking if a new image was dropped in img-dump dir 
-   
+    while (1){ //Keeps checking if a new image was dropped in img-dump dir  
     if (!TAILQ_EMPTY(&head)){
-
+    while(!TAILQ_EMPTY(&head)){//Drains queue until every image has been run through network
     strcpy(line, filename);
     e = TAILQ_FIRST(&head);
     TAILQ_REMOVE(&head, e, nodes);
@@ -707,37 +706,39 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         network_predict(net, X);
 	printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
         get_region_boxes(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
-        if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+	if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
         //else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-	draw_detections(im, output, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes);
-        
+	int hit = draw_detections(im, output, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes); 
 	if(outfile){
             save_image(im, outfile);
         }
         else{
-	    char outputPath[256] = "../output/imgs/";
-            strcat(outputPath, outputImg);
-            strcat(outputPath, "-prediction");	    
-            save_image(im,  outputPath);
+	    if (hit == 1){
+	    	char outputPath[256] = "../output/imgs/";
+            	strcat(outputPath, outputImg);
+            	strcat(outputPath, "-prediction");	    
+            	save_image(im,  outputPath);
 #ifdef OPENCV
-            cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
-            if(fullscreen){
-                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            }
-            show_image(im, "predictions");
-            cvWaitKey(0);
-            cvDestroyAllWindows();
-#endif
+            	cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
+            	if(fullscreen){
+                	cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+            	}
+            	show_image(im, "predictions");
+            	cvWaitKey(0);
+            	cvDestroyAllWindows();
+#endif	
+	    }
         }
 
         free_image(im);
         free_image(sized);
         free(boxes);
         free_ptrs((void **)probs, l.w*l.h*l.n);
-    
     }
     }
     }
+    }
+    printf("waiting...\n");
     sleep(1);
     }
 }

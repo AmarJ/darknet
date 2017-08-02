@@ -190,9 +190,10 @@ image **load_alphabet()
     return alphabets;
 }
 
-void draw_detections(image im, char *output, int num, float thresh, box *boxes, float **probs, float **masks, char **names, image **alphabet, int classes)
+int draw_detections(image im, char *output, int num, float thresh, box *boxes, float **probs, float **masks, char **names, image **alphabet, int classes)
 {
-    int i;
+    int i; 
+    int hit = 0;
 
     FILE *fp;
     char outputPath[256] = "../output/coords/";
@@ -205,7 +206,8 @@ void draw_detections(image im, char *output, int num, float thresh, box *boxes, 
         int class = max_index(probs[i], classes);
         float prob = probs[i][class];
         if(prob > thresh){
-            int width = im.h * .006;
+            hit = 1;
+	    int width = im.h * .006;
 
             if(0){
                 width = pow(prob, 1./2.)*10+1;
@@ -242,7 +244,7 @@ void draw_detections(image im, char *output, int num, float thresh, box *boxes, 
 	    fprintf(fp, "BOX x1:%i ", left);
 	    fprintf(fp, "BOX y1:%i ", top);
 	    fprintf(fp, "BOX x2:%i ", right);
-	    fprintf(fp, "BOX y2:%i\n ", bot);
+	    fprintf(fp, "BOX y2:%i\n", bot);
 
 
             draw_box_width(im, left, top, right, bot, width, red, green, blue);
@@ -263,6 +265,7 @@ void draw_detections(image im, char *output, int num, float thresh, box *boxes, 
         }
     }
     fclose(fp);
+    return hit;
 }
 
 void transpose_image(image im)
