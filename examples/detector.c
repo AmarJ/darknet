@@ -600,8 +600,8 @@ void *check_queue(void *param){
 
     while(1){    
     
-    int length = read(fd, buffer, EVENT_BUF_LEN);
-    int i=0;
+        int length = read(fd, buffer, EVENT_BUF_LEN);
+        int i=0;
 
         while ( i < length ) {
             struct inotify_event * event = ( struct inotify_event * ) &buffer[ i ];
@@ -643,12 +643,13 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
 
-
     image **alphabet = load_alphabet();
     network net = parse_network_cfg(cfgfile);
+    
     if(weightfile){
         load_weights(&net, weightfile);
     }
+    
     set_batch_network(&net, 1);
     srand(2222222);
     clock_t time;
@@ -661,85 +662,103 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
     pthread_t *tid = malloc(sizeof(pthread_t)); 
     pthread_create(&tid, NULL, check_queue, NULL); 
 
-    while (1){ //Keeps checking if a new image was dropped in img-dump dir  
-    if (!TAILQ_EMPTY(&head)){
-    while(!TAILQ_EMPTY(&head)){//Drains queue until every image has been run through network
-    strcpy(line, filename);
-    e = TAILQ_FIRST(&head);
-    TAILQ_REMOVE(&head, e, nodes);
-    strcat(line, e->fileNameC);
-    free(e);
-    e = NULL;
-    char *exten; 
-    if((exten = strrchr(line,'.')) != NULL ) {
-	if(strcmp(exten,".jpg") == 0 || strcmp(exten,".png") == 0 || strcmp(exten,".jpeg") == 0 || strcmp(exten,".PNG") == 0 || strcmp(exten,".JPG") == 0 || strcmp(exten,".JPEG") == 0) {   
-        
-	char *output = buff;
-	strncpy(output, strtok(line, "\n"), 256);	
-	output = basename(output);
-	char outputImg[256];
-	strcpy(outputImg, output);
-	output = strtok(outputImg, ".");
-	if(line){
-            strncpy(input, line, 256);
-        } 
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net.w, net.h);
-        //image sized = resize_image(im, net.w, net.h);
-        //image sized2 = resize_max(im, net.w);
-        //image sized = crop_image(sized2, -((net.w - sized2.w)/2), -((net.h - sized2.h)/2), net.w, net.h);
-        //resize_network(&net, sized.w, sized.h);
-        layer l = net.layers[net.n-1];
+    while (1) { //Keeps checking if a new image was dropped in watch folder  
+	
+	if (!TAILQ_EMPTY(&head)) {
+	    
+	    while(!TAILQ_EMPTY(&head)) { //Drains queue until every image has been run through classifier
+		
+		clock_t tic = clock(); //execution time for classifier
+		strcpy(line, filename);
+		e = TAILQ_FIRST(&head);
+		TAILQ_REMOVE(&head, e, nodes); //Drain head
+		strcat(line, e->fileNameC);
+		free(e);
+		e = NULL;
+		char *exten; 
+		
+		if((exten = strrchr(line,'.')) != NULL ) {
+		    
+		    //Check img type
+		    if(strcmp(exten,".jpg") == 0 || strcmp(exten,".png") == 0 || strcmp(exten,".jpeg") == 0 || strcmp(exten,".PNG") == 0 || strcmp(exten,".JPG") == 0 || strcmp(exten,".JPEG") == 0) {   
+		    
+			char *output = buff;
+			strncpy(output, strtok(line, "\n"), 256);	
+			output = basename(output);
+			char outputImg[256];
+			strcpy(outputImg, output);
+			output = strtok(outputImg, ".");
+			
+			if(line){
+			    strncpy(input, line, 256);
+			} 
+			
+			image im = load_image_color(input,0,0);
+			image sized = letterbox_image(im, net.w, net.h);
+			//image sized = resize_image(im, net.w, net.h);
+			//image sized2 = resize_max(im, net.w);
+			//image sized = crop_image(sized2, -((net.w - sized2.w)/2), -((net.h - sized2.h)/2), net.w, net.h);
+			//resize_network(&net, sized.w, sized.h);
+			layer l = net.layers[net.n-1];
+			box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+			float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+			
+			for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
 
-        box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
-        float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-        for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
+			float **masks = 0;
+			
+			if (l.coords > 4){
+			    masks = calloc(l.w*l.h*l.n, sizeof(float*));
+			    for (j = 0; j < l.w*l.h*l.n; ++j) masks[j] = calloc(l.coords-4, sizeof(float *));
+			}
 
-        float **masks = 0;
-        if (l.coords > 4){
-            masks = calloc(l.w*l.h*l.n, sizeof(float*));
-            for(j = 0; j < l.w*l.h*l.n; ++j) masks[j] = calloc(l.coords-4, sizeof(float *));
-        }
-
-        float *X = sized.data;
-        time=clock();
-        network_predict(net, X);
-	printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        get_region_boxes(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
-	if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        //else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-	int hit = draw_detections(im, output, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes); 
-	if(outfile){
-            save_image(im, outfile);
-        }
-        else{
-	    if (hit == 1){
-	    	char outputPath[256] = "../output/imgs/";
-            	strcat(outputPath, outputImg);
-            	strcat(outputPath, "-prediction");	    
-            	save_image(im,  outputPath);
+			float *X = sized.data;
+			time=clock();
+			network_predict(net, X);
+			printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
+			get_region_boxes(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, masks, 0, 0, hier_thresh, 1);
+			
+			if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+			//else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+			
+			int hit = draw_detections(im, output, l.w*l.h*l.n, thresh, boxes, probs, masks, names, alphabet, l.classes); 
+			
+			if(outfile){
+			    save_image(im, outfile);
+			}
+			
+			else {
+			    
+			    if (hit == 1){
+				char outputPath[256] = "../output/imgs/";
+				strcat(outputPath, outputImg);
+				strcat(outputPath, "-prediction");	    
+				save_image(im,  outputPath);
 #ifdef OPENCV
-            	cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
-            	if(fullscreen){
-                	cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            	}
-            	show_image(im, "predictions");
-            	cvWaitKey(0);
-            	cvDestroyAllWindows();
+				cvNamedWindow("predictions", CV_WINDOW_NORMAL); 
+				
+				if(fullscreen){
+					cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+				}
+				
+				show_image(im, "predictions");
+				cvWaitKey(0);
+				cvDestroyAllWindows();
 #endif	
-	    }
-        }
+			    }
+			}
 
-        free_image(im);
-        free_image(sized);
-        free(boxes);
-        free_ptrs((void **)probs, l.w*l.h*l.n);
-    }
-    }
-    }
-    }
-    printf("waiting...\n");
-    sleep(1);
+			free_image(im);
+			free_image(sized);
+			free(boxes);
+			free_ptrs((void **)probs, l.w*l.h*l.n);
+			clock_t toc = clock();
+			printf("Total detector time: %f \n", (double)(toc-tic)/CLOCKS_PER_SEC);
+		    }
+		}
+	    }
+	}
+	sleep(1);
     }
 }
 
@@ -789,7 +808,7 @@ void run_detector(int argc, char **argv)
     char *cfg = argv[4];
     char *weights = (argc > 5) ? argv[5] : 0;
     char *filename = (argc > 6) ? argv[6]: 0;
-    if(0==strcmp(argv[2], "test")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen);
+    if(0==strcmp(argv[2], "run")) test_detector(datacfg, cfg, weights, filename, thresh, hier_thresh, outfile, fullscreen);
     else if(0==strcmp(argv[2], "train")) train_detector(datacfg, cfg, weights, gpus, ngpus, clear);
     else if(0==strcmp(argv[2], "valid")) validate_detector(datacfg, cfg, weights, outfile);
     else if(0==strcmp(argv[2], "valid2")) validate_detector_flip(datacfg, cfg, weights, outfile);
