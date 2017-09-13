@@ -16,6 +16,14 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     char *train_images = option_find_str(options, "train", "data/train.list");
     char *backup_directory = option_find_str(options, "backup", "/backup/");
 
+    //Log for learning rate 
+    FILE *f = fopen("log.txt", "w+"); 
+
+    if (f == NULL) {
+	printf("Problem opening file");
+	exit(1);
+    }
+
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
@@ -38,6 +46,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     int imgs = net.batch * net.subdivisions * ngpus;
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
+    fprintf(f, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
     data train, buffer;
 
     layer l = net.layers[net.n - 1];
@@ -160,6 +169,7 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
     char buff[256];
+    fclose(f);
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
 }
@@ -592,12 +602,14 @@ typedef struct imagesToScan {
 struct imagesToScan * e = NULL;
 TAILQ_HEAD(imagesToScan_s, imagesToScan) head;
 
-
 void *check_queue(void *param){
     char buffer[EVENT_BUF_LEN];
     int fd = inotify_init();
     int wd = inotify_add_watch(fd, "../input/watch-folder-0", IN_CREATE | IN_DELETE);
 
+    //int * p = malloc(4 * sizeof(int));
+    //memcpy(p, param, 4 * sizeof(int));
+    
     while(1){    
     
         int length = read(fd, buffer, EVENT_BUF_LEN);
@@ -632,7 +644,6 @@ void *check_queue(void *param){
         }
     }
 }
-
 
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
 {
