@@ -17,12 +17,6 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     char *backup_directory = option_find_str(options, "backup", "/backup/");
 
     //Log for learning rate 
-    FILE *f = fopen("log.txt", "w+"); 
-
-    if (f == NULL) {
-	printf("Problem opening file");
-	exit(1);
-    }
 
     srand(time(0));
     char *base = basecfg(cfgfile);
@@ -46,7 +40,6 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
     int imgs = net.batch * net.subdivisions * ngpus;
     printf("Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
-    fprintf(f, "Learning Rate: %g, Momentum: %g, Decay: %g\n", net.learning_rate, net.momentum, net.decay);
     data train, buffer;
 
     layer l = net.layers[net.n - 1];
@@ -147,12 +140,12 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
 
         i = get_current_batch(net);
         printf("%ld: %f, %f avg, %f rate, %lf seconds, %d images\n", get_current_batch(net), loss, avg_loss, get_current_rate(net), sec(clock()-time), i*imgs);
-        if(i%1000==0){
+        if(i%10==0){
 #ifdef GPU
             if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
             char buff[256];
-            sprintf(buff, "%s/%s.backup", backup_directory, base);
+            sprintf(buff, "%s/%s.backup.%d", backup_directory, base, i);
             save_weights(net, buff);
         }
         if(i%10000==0 || (i < 1000 && i%100 == 0)){
@@ -169,7 +162,6 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
     if(ngpus != 1) sync_nets(nets, ngpus, 0);
 #endif
     char buff[256];
-    fclose(f);
     sprintf(buff, "%s/%s_final.weights", backup_directory, base);
     save_weights(net, buff);
 }
