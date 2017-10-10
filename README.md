@@ -4,6 +4,7 @@ Darknet Neural Network Framework
  
 Using Redmon's darknet framework I created my own implementation of YOLO (You Only Look Once) for my Kaptur logo recognition project. YOLO is a new approach to object detection that uses a single neural network to predict bounding boxes and class probabilities on full images in one evaluation (hence the name). The [paper on YOLO](https://arxiv.org/pdf/1506.02640.pdf) is pretty easy to follow and nicely breaks down some machine learning concepts for none-PhDs like myself. 
 
+### Use case
 [Kaptur](https://kaptur.tech) is an application running in the cloud that scrapes images off social media sites and looks for logos of popular brands such as Starbucks, Nike and Corona. Once a logo is found I collect the metadata around the post and run several object classifiers to get more information about what’s in the image. I am collecting data about how people around the world are using these brands and working on transforming this mountain of information into business insights.
 
 ### Custom features I added to the framework
