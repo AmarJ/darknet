@@ -1,9 +1,11 @@
 #include "darknet.h"
 #include <libgen.h>
-#include <linux/inotify.h>
+#include <sys/inotify.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/queue.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 #define EVENT_SIZE        (sizeof(struct inotify_event))
 #define EVENT_BUF_LEN     (1024*(EVENT_SIZE + 16))
@@ -595,7 +597,6 @@ struct imagesToScan * e = NULL;
 TAILQ_HEAD(imagesToScan_s, imagesToScan) head;
 
 void *check_queue(void *param){
-    char buffer[EVENT_BUF_LEN];
     int fd = inotify_init();
     int wd = inotify_add_watch(fd, "../input/watch-folder-0", IN_CREATE | IN_DELETE);
 
@@ -603,7 +604,10 @@ void *check_queue(void *param){
     //memcpy(p, param, 4 * sizeof(int));
     
     while(1){    
-    
+	int avail;
+	ioctl(fd, FIONREAD, &avail);
+	char buffer[avail];
+	    
         int length = read(fd, buffer, EVENT_BUF_LEN);
         int i=0;
 
